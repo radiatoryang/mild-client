@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-//using Unity.IO.Compression;
 
 using System;
 using System.IO;
@@ -23,21 +22,38 @@ public class Mild : MonoBehaviour {
 	[Tooltip("how many times, per second, to broadcast SyncMyPlayer or SyncOtherPlayer messages at player objects... set to -1 to turn it off")]
 	public int tickRate = 20;
 
-	// TODO: remove, replace with OnGUI
-	[SerializeField] Text textOutput;
-	[SerializeField] InputField consoleInput;
+	[SerializeField] bool displayLog = true;
+	string logText;
 
-
+	// general server-wide player info stuff
 	[SerializeField] Transform playerPrefab;
 	static Dictionary<int, Transform> idToPlayer = new Dictionary<int, Transform>();
+	static Dictionary<int, string> idToName = new Dictionary<int, string>();
 	static List<Transform> allPlayers { get { return idToPlayer.Values.ToList(); } }
-	public static int myID = -1;
-	public static string myName = "NEW_PLAYER";
-	public static Transform myPlayer { get { return GetPlayer(myID); } }
 
-	public static Transform GetPlayer (int id) {
+	// convenience methods
+	/// <summary>
+	/// Gets the player transform for a given playerID. Value of -1 means current player.
+	/// </summary>
+	/// <returns>The player transform.</returns>
+	public static Transform GetPlayer (int id=-1) {
+		if ( id < 0 ) // if left blank, return the default local player
+			id = myID;
 		if ( idToPlayer != null && idToPlayer.ContainsKey(id) ) {
 			return Mild.idToPlayer[id];
+		} else {
+			return null;
+		}
+	}
+	/// <summary>
+	/// Gets the name of the player for a given playerID. Value of -1 means current player.
+	/// </summary>
+	/// <returns>The player name.</returns>
+	public static string GetPlayerName (int id=-1) {
+		if ( id < 0 ) // if left blank, return the default local player
+			id = myID;
+		if ( idToName != null && idToName.ContainsKey(id) ) {
+			return Mild.idToName[id];
 		} else {
 			return null;
 		}
@@ -45,6 +61,12 @@ public class Mild : MonoBehaviour {
 	public static bool IsMyTransform( Transform transform ) {
 		return transform == myPlayer || transform.parent == myPlayer;
 	}
+
+	// info about my player
+	public static int myID = -1;
+	public static string myName { get { return GetPlayerName(); } }
+	public static Transform myPlayer { get { return GetPlayer(); } }
+
 		
 	void Awake () {
 		instance = this;
@@ -126,6 +148,10 @@ public class Mild : MonoBehaviour {
 	}
 
 
+	public static void UpdatePlayerName (string newName ) {
+		// TODO: finish player name support
+	}
+
 	// "join" message from server, when a player joins (including when you join a server)
 	void OnPlayerJoin( int newID ) {
 		InstantiatePlayer(newID);
@@ -140,7 +166,7 @@ public class Mild : MonoBehaviour {
 
 	// "welcome" message from server, when we just joined
 	void OnPlayerWelcome( int[] allPlayerIDs ) {
-		Debug.Log(allPlayerIDs.Length);
+		Log(allPlayerIDs.Length.ToString() + " client(s) already on the server");
 		for( int i=0; i<allPlayerIDs.Length; i++) {
 			InstantiatePlayer( allPlayerIDs[i] );
 		}
@@ -188,6 +214,10 @@ public class Mild : MonoBehaviour {
 		case "chat":
 			string[] chatParts = body.Split('`');
 			OnPlayerChat(chatParts[0], chatParts[1]);
+			break;
+		case "name":
+			string[] nameParts = body.Split('`');
+
 			break;
 		case "cmd":
 			string[] cmdParts = body.Split('`');
@@ -259,8 +289,8 @@ public class Mild : MonoBehaviour {
 	}
 
 	public void SendChat () {
-		SendToServer( "chat^" + "client" + myID.ToString() + "`" + consoleInput.text );
-		consoleInput.text = "";
+//		SendToServer( "chat^" + "client" + myID.ToString() + "`" + consoleInput.text );
+//		consoleInput.text = "";
 	}
 
 	IEnumerator ServerCoroutine () {
@@ -285,9 +315,24 @@ public class Mild : MonoBehaviour {
 		webSocket.Close ();
 	}
 
+	void OnGUI () {
+		if ( !displayLog ) {
+			return;
+		}
+
+		const float margin = 8f;
+
+		var style = new GUIStyle();
+		style.alignment = TextAnchor.LowerLeft;
+		style.wordWrap = true;
+		style.clipping = TextClipping.Clip;
+
+		GUI.Label( new Rect(margin, margin, Screen.width * 0.5f, Screen.height * 0.5f), logText, style );
+	}
+
 	void Log( string logMessage ) {
 		Debug.Log( logMessage );
-		textOutput.text += "\n" + logMessage;
+		logText += "\n" + logMessage;
 	}
 
 	void OnApplicationQuit () {
