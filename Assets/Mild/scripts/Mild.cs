@@ -16,6 +16,8 @@ public class Mild : MonoBehaviour {
 
 	[SerializeField, Tooltip("must start with ws:// and end with a port, e.g. ws://myserver.com:8000")] 
 	string serverAddress = "ws://nodejs-radiatorgame.rhcloud.com:8000";
+	[SerializeField] string serverUsername = "serverUsername";
+	[SerializeField] string serverPassword = "serverSecretPassword";
 	static WebSocket webSocket;
 
 	[Tooltip("how many times, per second, to broadcast SyncMyPlayer or SyncOtherPlayer messages at player objects... set to -1 to turn it off")]
@@ -264,7 +266,7 @@ public class Mild : MonoBehaviour {
 	IEnumerator ServerCoroutine () {
 		yield return new WaitForSeconds(1f);
 		webSocket = new WebSocket(new Uri(serverAddress) );
-		yield return StartCoroutine(webSocket.Connect());
+		yield return StartCoroutine(webSocket.Connect( serverUsername, serverPassword ));
 		yield return 0;
 		Log("(connection established)");
 
@@ -295,6 +297,13 @@ public class Mild : MonoBehaviour {
 	}
 
 
+	// compression is actually pretty unnecessary, given how small these packets are?
+	// if I ever implement nagle / pack delays, then maybe it would make sense
+
+	// from http://stackoverflow.com/questions/19364497/how-to-tell-if-a-byte-array-is-gzipped
+	public static bool IsGZip(byte[] arr) {
+		return arr.Length >= 2 && arr[0] == 31 && arr[1] == 139;
+	}
 
 	// from http://stackoverflow.com/questions/7343465/compression-decompression-string-with-c-sharp
 //	public static void CopyTo(Stream src, Stream dest) {

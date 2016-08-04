@@ -73,7 +73,8 @@ public class WebSocket
 		return buffer;
 	}
 
-	public IEnumerator Connect()
+	// TODO: implement auth credentials hook in the jslib
+	public IEnumerator Connect(string username ="", string password = "")
 	{
 		m_NativeRef = SocketCreate (mUrl.ToString());
 
@@ -105,12 +106,15 @@ public class WebSocket
 	bool m_IsConnected = false;
 	string m_Error = null;
 
-	public IEnumerator Connect()
+	public IEnumerator Connect(string username = "", string password = "")
 	{
 		m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
 		m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue (e.RawData);
 		m_Socket.OnOpen += (sender, e) => m_IsConnected = true;
 		m_Socket.OnError += (sender, e) => m_Error = e.Message;
+		if ( username.Length > 0 && password.Length > 0 ) {
+			m_Socket.SetCredentials( username, password, true );
+		}
 		m_Socket.ConnectAsync();
 		while (!m_IsConnected && m_Error == null)
 			yield return 0;
