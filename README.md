@@ -13,5 +13,6 @@ Mild is a very lightweight, very shitty multiplayer server framework via NodeJS 
 4. Define a "player prefab" for each player, assign the reference to the Mild script. These prefabs will get tracked and instantiated by Mild.cs -- for an example script, see MildPlayer.cs
 5. Test and play. If you need help, see the included example scene. For testing, I recommend building a Win/OSX player, and running multiple windowed instances to test.
 
+### some advice
 - Make sure "Run in Background" is enabled in your Player Settings.
 - Edit the "tick rate" in Mild.cs to edit how often to broadcast updates. Higher tick rates mean more accuracy but more data being sent, and lower tick rates mean less frequent updates and less data being sent. 30 per second is fairly standard for games.
